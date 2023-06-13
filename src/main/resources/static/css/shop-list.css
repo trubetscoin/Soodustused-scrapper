@@ -1,0 +1,12 @@
+.card-body {
+    padding: 0!important;
+}
+
+.url {
+    display: block;
+    text-decoration: none;
+}
+
+.parent:hover {
+    background-color: #32cc87;
+}

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout.html}">
+<head>
+    <title>Shop List</title>
+    <link rel="stylesheet" type="text/css" href="/css/shop-list.css">
+
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="center">
+        <h1>Shop List</h1>
+    </div>
+    <section>
+        <div class="container py-5">
+            <div class="row justify-content-evenly">
+                <div class="col-md-5 col-lg-2 mb-1 mb-lg-0 mb-3 mt-3" th:each="shop : ${shops}">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="parent">
+                                <a th:href="@{/shop/{id}(id=${shop.id})}" th:text="${shop.name}" class="text-center pt-4 pb-4 mb-0 url"></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>
+
+
+

@@ -1,0 +1,17 @@
+body {
+    background-color: #eee;
+}
+
+.center {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+@media (max-width: 1920px) {
+    .container {
+        max-width: 1700px;
+    }
+}

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout.html}">
+<head>
+    <title>Shop Products</title>
+    <link rel="stylesheet" type="text/css" href="/css/products.css">
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="center">
+        <a href="/" class="btn back-button">Back</a>
+        <h1 th:text="${shop.name}"></h1>
+        <h2 th:text="${' Number of Items: ' + productsCount}"></h2>
+    </div>
+    <section>
+        <div class="container py-5">
+            <div class="row">
+                <div class="col-md-5 col-lg-2 mb-1 mb-lg-0 mb-3 mt-3" th:each="product : ${products}">
+                    <div class="card h-100">
+                        <div class="card-image">
+                            <div class="image-overlay">
+                                <img th:src="${product.image}" class="w-100" alt="Product Image">
+                                <a th:if="${product.url != null}" th:href="${product.url}" class="card-link"></a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-end">
+                                <p th:text="${product.origPrice}" class="small text-danger"><s></s></p>
+                            </div>
+
+                            <div class="d-flex justify-content-between mb-3">
+                                <h5 th:text="${product.name}" class="mb-0"></h5>
+                                <h5 th:text="${product.price}" class="text-dark mb-0"></h5>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>
+
+
+
