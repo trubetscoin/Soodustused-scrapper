@@ -126,9 +126,15 @@ public class Scrapper {
 
     private static String shopPropertyCalculation(String shopName, String property, WebElement item, String[] selectors) {
         if (shopName.equalsIgnoreCase("Lidl") && property.equalsIgnoreCase("image")) {
-            String image = getElementValue(item, new By.ByCssSelector("source.nuc-a-source"), "srcset");
+            String image = getElementValue(item, new By.ByCssSelector(selectors[0]), selectors[1]);
             String[] urls = image.split(",\\s+");
             return urls[0].trim().split("\\s+")[0];
+        }
+
+        if (shopName.equalsIgnoreCase("Prisma") && property.equalsIgnoreCase("origPrice")) {
+            String origPrice = getElementValue(item, new By.ByCssSelector(selectors[0]), selectors[1]);
+            if (origPrice == null) origPrice = getElementValue(item, new By.ByCssSelector("div.unit-price"), selectors[1]);
+            return origPrice;
         }
 
         if (Arrays.stream(selectors).anyMatch(Objects::isNull)) return null;
@@ -243,35 +249,35 @@ public class Scrapper {
                 new AbstractMap.SimpleEntry<>("url", new String[]{"a", "href"}),
                 new AbstractMap.SimpleEntry<>("image", new String[]{"div > img", "src"}),
                 new AbstractMap.SimpleEntry<>("name", new String[]{"div.name", "text"}),
-                new AbstractMap.SimpleEntry<>("origPrice", new String[]{"div.unit-price", "text"}),
+                new AbstractMap.SimpleEntry<>("origPrice", new String[]{"div.discount-price > span", "text"}),
                 new AbstractMap.SimpleEntry<>("price", new String[]{"span.whole-number", "span.decimal", "text"})
         ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 
-//
-//        con(parseLinks.get("Maxima"));
-//        scrapeShop("Maxima", By.cssSelector("div.col-third"), Stream.of(
-//                new AbstractMap.SimpleEntry<>("url", new String[]{null}),
-//                new AbstractMap.SimpleEntry<>("image", new String[]{"div.img > img", "src"}),
-//                new AbstractMap.SimpleEntry<>("name", new String[]{"div.title", "text"}),
-//                new AbstractMap.SimpleEntry<>("origPrice", new String[]{"div.t2 > span.value", "text"}),
-//                new AbstractMap.SimpleEntry<>("price", new String[]{"data-price"})
-//        ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
-//
-//
-//        con(parseLinks.get("Lidl"));
-//        cookieDecline(new By[] {
-//                By.cssSelector("button.cookie-alert-decline-button"),
-//                By.cssSelector("button.overlay__closer")
-//        });
-//        scrapeShop("Lidl", By.cssSelector("article.ret-o-card"), Stream.of(
-//                new AbstractMap.SimpleEntry<>("url", new String[]{"a.ret-o-card__link", "href"}),
-//                new AbstractMap.SimpleEntry<>("image", new String[]{"source.nuc-a-source", "srcset"}),
-//                new AbstractMap.SimpleEntry<>("name", new String[]{"data-name"}),
-//                new AbstractMap.SimpleEntry<>("origPrice", new String[]{"span.lidl-m-pricebox__discount-price", "text"}),
-//                new AbstractMap.SimpleEntry<>("price", new String[]{"span.lidl-m-pricebox__price", "text"})
-//        ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 
-        debugPrintShopsItems();
+        con(parseLinks.get("Maxima"));
+        scrapeShop("Maxima", By.cssSelector("div.col-third"), Stream.of(
+                new AbstractMap.SimpleEntry<>("url", new String[]{null}),
+                new AbstractMap.SimpleEntry<>("image", new String[]{"div.img > img", "src"}),
+                new AbstractMap.SimpleEntry<>("name", new String[]{"div.title", "text"}),
+                new AbstractMap.SimpleEntry<>("origPrice", new String[]{"div.t2 > span.value", "text"}),
+                new AbstractMap.SimpleEntry<>("price", new String[]{"data-price"})
+        ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+
+
+        con(parseLinks.get("Lidl"));
+        cookieDecline(new By[] {
+                By.cssSelector("button.cookie-alert-decline-button"),
+                By.cssSelector("button.overlay__closer")
+        });
+        scrapeShop("Lidl", By.cssSelector("article.ret-o-card"), Stream.of(
+                new AbstractMap.SimpleEntry<>("url", new String[]{"a.ret-o-card__link", "href"}),
+                new AbstractMap.SimpleEntry<>("image", new String[]{"source.nuc-a-source", "srcset"}),
+                new AbstractMap.SimpleEntry<>("name", new String[]{"data-name"}),
+                new AbstractMap.SimpleEntry<>("origPrice", new String[]{"span.lidl-m-pricebox__discount-price", "text"}),
+                new AbstractMap.SimpleEntry<>("price", new String[]{"span.lidl-m-pricebox__price", "text"})
+        ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+
+        //debugPrintShopsItems();
         return getShops();
     }
 
