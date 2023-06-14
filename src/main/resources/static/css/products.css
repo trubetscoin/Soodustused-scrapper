@@ -30,3 +30,8 @@
     right: 0;
     cursor: pointer;
 }
+
+.origPrice {
+    margin-top: 1rem;
+    text-decoration: line-through;
+}

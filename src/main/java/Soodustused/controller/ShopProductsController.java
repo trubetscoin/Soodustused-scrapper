@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -29,13 +30,22 @@ public class ShopProductsController {
     }
 
     @GetMapping("/shop/{id}")
-    public String getShopProducts(@PathVariable("id") Integer id, Model model) {
+    public String getShopProducts(@PathVariable("id") Integer id,
+                                  @RequestParam(value = "query", required = false) String query,
+                                  Model model) {
         Shop shop = shopService.getShopById(id);
-        if(shop == null) {
+        if (shop == null) {
             model.addAttribute("errorMessage", "Shop not found");
             return "error-page";
         }
-        List<Product> products = productService.getProductsByShopId(id);
+
+        List<Product> products;
+        if (query != null && !query.isEmpty()) {
+            products = productService.searchProductsByName(query, id);
+        } else {
+            products = productService.getProductsByShopId(id);
+        }
+
         model.addAttribute("shop", shop);
         model.addAttribute("products", products);
         model.addAttribute("productsCount", products.size());

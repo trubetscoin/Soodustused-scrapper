@@ -5,6 +5,13 @@
 <head>
     <title>Shop Products</title>
     <link rel="stylesheet" type="text/css" href="/css/products.css">
+    <script>
+        function clearForm() {
+            document.getElementById("queryField").value = "";
+            document.getElementById("searchForm").submit();
+        }
+    </script>
+
 </head>
 <body>
 <div layout:fragment="content">
@@ -12,6 +19,11 @@
         <a href="/" class="btn back-button">Back</a>
         <h1 th:text="${shop.name}"></h1>
         <h2 th:text="${' Number of Items: ' + productsCount}"></h2>
+        <form id="searchForm" th:action="@{/shop/__${shop.id}__}" method="get">
+            <input type="text" name="query" id="queryField" placeholder="Chocolate" th:value="${param.query}" />
+            <button type="submit">Search</button>
+            <button type="button" onclick="clearForm()">Clear</button>
+        </form>
     </div>
     <section>
         <div class="container py-5">
@@ -25,15 +37,15 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <div class="d-flex justify-content-end">
-                                <p th:text="${product.origPrice}" class="small text-danger"><s></s></p>
-                            </div>
-
-                            <div class="d-flex justify-content-between mb-3">
+                            <div class="d-flex">
                                 <h5 th:text="${product.name}" class="mb-0"></h5>
-                                <h5 th:text="${product.price}" class="text-dark mb-0"></h5>
                             </div>
-
+                            <div class="d-flex">
+                                <h6 th:text="${#strings.contains(product.origPrice, '.0') ? (product.origPrice + '0') : product.origPrice}" class="small text-dark origPrice"></h6>
+                            </div>
+                            <div class="d-flex justify-content-between mb-3">
+                                <h5 th:text="${#strings.contains(product.price, '.0') ? (product.price + '0') : product.price}" class="text-danger mb-0"></h5>
+                            </div>
                         </div>
                     </div>
                 </div>

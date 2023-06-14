@@ -1,5 +1,6 @@
 package Soodustused.scrapper;
 
+import java.text.DecimalFormat;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -57,7 +58,7 @@ public class Scrapper {
             try {
                 return Double.parseDouble(origPrice);
             }
-            catch (NumberFormatException | NullPointerException e) {
+            catch (NullPointerException | NumberFormatException e) {
                 return null;
             }
         }
@@ -66,7 +67,7 @@ public class Scrapper {
             try {
                 return Double.parseDouble(price);
             }
-            catch (NumberFormatException | NullPointerException e) {
+            catch (NullPointerException | NumberFormatException e) {
                 return null;
             }
         }
