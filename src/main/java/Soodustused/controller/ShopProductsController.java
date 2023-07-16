@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.Collections;
 import java.util.List;
 
 @Controller
@@ -23,8 +24,14 @@ public class ShopProductsController {
     }
 
     @GetMapping("/")
-    public String getShops(Model model) {
-        List<Shop> shops = shopService.getAllShops();
+    public String getShops(@RequestParam(value = "query", required = false) String query,
+                           Model model) {
+        List<Shop> shops;
+        if (query != null && !query.isEmpty()) {
+            shops = shopService.searchShopsByName(query);
+        } else {
+            shops = shopService.getAllShops();
+        }
         model.addAttribute("shops", shops);
         return "shop-list";
     }
@@ -33,6 +40,7 @@ public class ShopProductsController {
     public String getShopProducts(@PathVariable("id") Integer id,
                                   @RequestParam(value = "query", required = false) String query,
                                   Model model) {
+
         Shop shop = shopService.getShopById(id);
         if (shop == null) {
             model.addAttribute("errorMessage", "Shop not found");

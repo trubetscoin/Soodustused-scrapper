@@ -26,7 +26,6 @@ public class SoodustusedApplication {
 
 	public static void main(String[] args) {
 		ConfigurableApplicationContext context = SpringApplication.run(SoodustusedApplication.class, args);
-		SoodustusedApplication application = context.getBean(SoodustusedApplication.class);
 	}
 
 	@PostConstruct

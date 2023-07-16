@@ -5,8 +5,10 @@ import Soodustused.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class ProductService {
@@ -17,15 +19,16 @@ public class ProductService {
     }
 
     public List<Product> getProductsByShopId(Integer shopId) {
-        return productRepository.findAll()
+        Stream<Product> productStream = productRepository.findAll()
                 .stream()
-                .filter(product -> product.getShop().getId().equals(shopId))
-                .collect(Collectors.toList());
+                .filter(product -> product.getShop().getId().equals(shopId));
+
+        return productStream.collect(Collectors.toList());
     }
 
-    public List<Product> searchProductsByName(String name, Integer shopId) {
-        String[] queryWords = name.toLowerCase().split("\\s+");
-        return productRepository.findAll()
+    public List<Product> searchProductsByName(String query, Integer shopId) {
+        String[] queryWords = query.toLowerCase().split("\\s+");
+        Stream<Product> productStream = productRepository.findAll()
                 .stream()
                 .filter(product -> {
                     if (!product.getShop().getId().equals(shopId)) return false;
@@ -36,7 +39,8 @@ public class ProductService {
                         }
                     }
                     return true;
-                })
-                .collect(Collectors.toList());
+                });
+
+        return productStream.collect(Collectors.toList());
     }
 }

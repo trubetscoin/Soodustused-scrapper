@@ -1,10 +1,13 @@
 package Soodustused.scrapper;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Stream;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.*;
@@ -19,7 +22,7 @@ import org.slf4j.LoggerFactory;
 public class Scrapper {
     public static class Shop {
         private final String name;
-        private ArrayList<Product> products;
+        private final ArrayList<Product> products;
 
         public Shop(String Name)
         {
@@ -36,8 +39,8 @@ public class Scrapper {
         }
     }
 
-    static ArrayList<Shop> SHOPS = new ArrayList<>();
-    public static ArrayList<Shop> getShops() { return SHOPS; }
+    static ArrayList<Shop> shops = new ArrayList<>();
+    public static ArrayList<Shop> getShops() { return shops; }
 
     public static class Product {
         private String name;
@@ -96,34 +99,26 @@ public class Scrapper {
         }
     }
 
-    public static class ShopsConfigurations {
-
-        // Name of the shop with the corresponding shop's data
-        private Map<String, ShopConfiguration> shopConfigs;
-
-        private Map<String, ShopConfiguration> getShopConfigs() {
-            return shopConfigs;
-        }
-
-        public void setShopConfigs(Map<String, ShopConfiguration> shopConfigs) {
-            this.shopConfigs = shopConfigs;
-        }
-
-        private ShopConfiguration getShopConfig(String shopName) {
-            return shopConfigs.get(shopName);
-        }
-    }
-
     public static class ShopConfiguration {
+        // name of the shop
+        private String shopName;
         // url to scrape items
         private String scrapeUrl;
         // selector to scrape items
         private String itemSelector;
         private Map<String, String[]> properties;
         private String[] cookieSelectors;
-        private boolean customLogic;
+        private String[] customLogicProperties;
 
-        private String getScrapeUrl() {
+        public String getShopName() {
+            return shopName;
+        }
+
+        public void setShopName(String shopName) {
+            this.shopName = shopName;
+        }
+
+        public String getScrapeUrl() {
             return scrapeUrl;
         }
 
@@ -131,7 +126,7 @@ public class Scrapper {
             this.scrapeUrl = scrapeUrl;
         }
 
-        private String getItemSelector() {
+        public String getItemSelector() {
             return itemSelector;
         }
 
@@ -139,7 +134,7 @@ public class Scrapper {
             this.itemSelector = itemSelector;
         }
 
-        private Map<String, String[]> getProperties() {
+        public Map<String, String[]> getProperties() {
             return properties;
         }
 
@@ -147,15 +142,23 @@ public class Scrapper {
             this.properties = properties;
         }
 
-        private boolean hasCustomLogic() {
-            return customLogic;
+        public boolean hasCustomLogic(String property) {
+            if (customLogicProperties == null) return false;
+            for (String s : customLogicProperties) {
+                if (s.equals(property)) return true;
+            }
+            return false;
         }
 
-        public void setCustomLogic(Boolean customLogic) {
-            this.customLogic = customLogic;
+        public void setCustomLogicProperties(String[] customLogicProperties) {
+            this.customLogicProperties = customLogicProperties;
         }
 
-        private String[] getCookieSelectors() {
+        public String[] getCustomLogicProperties() {
+            return customLogicProperties;
+        }
+
+        public String[] getCookieSelectors() {
             return cookieSelectors;
         }
 
@@ -164,27 +167,63 @@ public class Scrapper {
         }
     }
 
-    public static WebDriver driver = setUpWebDriver();
+    private static List<ShopConfiguration> shopsConfigs = loadConfiguration();
+    private static final WebDriver driver = setUpWebDriver();
     private static final Logger logger = LoggerFactory.getLogger(Scrapper.class);
-    private static final ShopsConfigurations config = loadConfiguration();
+    private static final List<String> explicitWaitShopNames = initExplicitWaitShopNames();
 
-    // TODO method desc
-    public static WebDriver setUpWebDriver(){
+    private static void loadGui() {
+        Gui gui = new Gui(shopsConfigs);
+        gui.showGui();
+    }
+
+    /**
+     * Setups webdriver for scrapping webpages
+     */
+    private static WebDriver setUpWebDriver(){
         WebDriverManager.chromedriver().setup();
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--headless");
         return new ChromeDriver(options);
     }
 
-    // TODO method desc
-    public static void connect(String link) {
-        driver.get(link);
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-        wait.until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")));
+    // in future can be replaced with either
+    // checking status code of the request in network
+    // or can be included in json
+    private static List<String> initExplicitWaitShopNames() {
+        List<String> list = new ArrayList<>();
+        list.add("selver");
+        return list;
     }
 
-    // TODO method desc
-    public static String getElementValue(WebElement element, By selector, String attribute) {
+    /**
+     * Gives html of a webpage
+     * @param url url of a webpage
+     */
+    private static void connect(String url) {
+        driver.get(url);
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        wait.until(webDriver -> ((JavascriptExecutor) webDriver).executeScript("return document.readyState").equals("complete"));
+    }
+
+    private static void connect(String url, int waitTimeSeconds) {
+        driver.get(url);
+        try {
+            Thread.sleep(waitTimeSeconds * 1000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Calculates a value of an element.
+     * Throws NoSuchElementException if such element was not found
+     * @param element Webelement
+     * @param selector By selector
+     * @param attribute String
+     * @return value of an element
+     */
+    static String getElementValue(WebElement element, By selector, String attribute) {
         try {
             WebElement foundElement = element.findElement(selector);
             if (attribute.equalsIgnoreCase("text")) {
@@ -197,8 +236,13 @@ public class Scrapper {
         }
     }
 
-    // TODO method desc
-    public static boolean itemsExists(String shopName, By selector) {
+    /**
+     * Checks if a shop contains at least one item to scrape
+     * @param shopName String
+     * @param selector By
+     * @return true/false
+     */
+    private static boolean itemsExists(String shopName, By selector) {
         try {
             WebElement item = driver.findElement(selector);
             logger.info("Items to scrape in " + shopName + " are found");
@@ -209,25 +253,15 @@ public class Scrapper {
         }
     }
 
-    // TODO method desc
-    private static String shopCustomLogicCalculation(String shopName, String property, WebElement item, String[] selectors) {
-        if (shopName.equalsIgnoreCase("Lidl") && property.equalsIgnoreCase("image")) {
-            String image = getElementValue(item, new By.ByCssSelector(selectors[0]), selectors[1]);
-            if (image == null) return null;
-            String[] urls = image.split(",\\s+");
-            return urls[0].trim().split("\\s+")[0];
-        }
-
-        if (shopName.equalsIgnoreCase("Prisma") && property.equalsIgnoreCase("origPrice")) {
-            String origPrice = getElementValue(item, new By.ByCssSelector(selectors[0]), selectors[1]);
-            if (origPrice == null) origPrice = getElementValue(item, new By.ByCssSelector("div.unit-price"), selectors[1]);
-            return origPrice;
-        }
-
-        return null;
-    }
-
-    // TODO method desc
+    /**
+     * Calculates property's value
+     * @param shopName String
+     * @param shopConfiguration ShopConfiguration
+     * @param property String
+     * @param item Weblement
+     * @param selectors String[]
+     * @return property's value
+     */
     private static String shopPropertyCalculation(String shopName, ShopConfiguration shopConfiguration, String property, WebElement item, String[] selectors) {
         if (selectors == null) {
             return null;
@@ -237,12 +271,8 @@ public class Scrapper {
             return null;
         }
 
-        if (shopConfiguration.hasCustomLogic()) {
-            String result = shopCustomLogicCalculation(shopName, property, item, selectors);
-            if (result != null) {
-                return result;
-                //TODO customLogic should be array of properties with custom logic
-            }
+        if (shopConfiguration.hasCustomLogic(property)) {
+            return CustomLogicScrapper.shopCustomLogicCalculation(shopName, property, item, selectors);
         }
 
         if (selectors.length == 2) {
@@ -270,21 +300,33 @@ public class Scrapper {
                 sb.append(c);
             }
         }
-        return sb.toString().replace(",", ".").replace("€", "").trim();
+        String cleanedPrice = sb.toString().replace(",", ".").replace("€", "").trim();
+        int dotIndex = cleanedPrice.indexOf(".");
+        if (dotIndex != -1 && dotIndex + 3 < cleanedPrice.length()) {
+            cleanedPrice = cleanedPrice.substring(0, dotIndex + 3);
+        }
+        return cleanedPrice;
     }
 
     /**
      * Scrapes a shop and add it to ArrayList of Shop class
      *
      */
-    private static void scrapeShop(String shopName, ShopConfiguration shopConfiguration) {
-        logger.info("Scraping " + shopName);
+    private static void scrapeShop(ShopConfiguration shopConfiguration) {
         if (shopConfiguration == null) {
             logger.error("An empty shop configuration received. Skipping to next shop...");
             return;
         }
 
-        connect(shopConfiguration.getScrapeUrl());
+        String shopName = shopConfiguration.getShopName();
+        logger.info("Scraping " + shopName);
+
+        if (explicitWaitShopNames.contains(shopName.toLowerCase())) {
+            connect(shopConfiguration.getScrapeUrl(), 10);
+        }
+        else {
+            connect(shopConfiguration.getScrapeUrl());
+        }
 
         String[] cookieSelectors = shopConfiguration.getCookieSelectors();
         if (cookieSelectors != null) {
@@ -301,7 +343,7 @@ public class Scrapper {
         List<WebElement> itemElements = driver.findElements(itemSelector);
 
         Shop shop = new Shop(shopName);
-        SHOPS.add(shop);
+        shops.add(shop);
 
         for (WebElement item : itemElements) {
             Product product = new Product();
@@ -309,6 +351,7 @@ public class Scrapper {
             for (Map.Entry<String, String[]> entry : elementSelectors.entrySet()) {
                 String property = entry.getKey();
                 String[] selectors = entry.getValue();
+
                 String value = shopPropertyCalculation(shopName, shopConfiguration, property, item, selectors);
 
                 switch (property) {
@@ -339,21 +382,21 @@ public class Scrapper {
             shop.products.add(product);
         }
 
-
-
         logger.info("All items in " + shopName + " were successfully scraped");
     }
 
+    static void updateShopConfigs() {
+        shopsConfigs = loadConfiguration();
+    }
+
     /**
-     * Loads JSON shops configurations from resources
-     * @return
+     * Loads JSON shops configurations
      */
-    private static ShopsConfigurations loadConfiguration() {
+    private static List<ShopConfiguration> loadConfiguration() {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
-            ClassLoader classLoader = Scrapper.class.getClassLoader();
-            File configFile = new File(Objects.requireNonNull(classLoader.getResource("json/shopsConfig.json")).getFile());
-            return objectMapper.readValue(configFile, ShopsConfigurations.class);
+            Path outputPath = Paths.get("json/shopsConfig.json");
+            return objectMapper.readValue(outputPath.toFile(), new TypeReference<List<ShopConfiguration>>() {});
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -362,9 +405,9 @@ public class Scrapper {
 
     /**
      * Convert String[] to ByCss[] selectors
-     * @param stringSelectors
+     * @param stringSelectors String array
      */
-    public static By[] stringToByCss(String[] stringSelectors) {
+    private static By[] stringToByCss(String[] stringSelectors) {
         By[] selectors = new By[stringSelectors.length];
         for (int i = 0; i < stringSelectors.length; i++) {
             selectors[i] = By.cssSelector(stringSelectors[i]);
@@ -377,7 +420,7 @@ public class Scrapper {
      * @param selectors
      * By css selectors
      */
-    public static void elementsClick(By[] selectors) {
+    private static void elementsClick(By[] selectors) {
         try {
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
             for (By selector : selectors) {
@@ -394,9 +437,9 @@ public class Scrapper {
      * DEBUGGING
      * Prints all shops data
      */
-    public static void debugPrintShopsItems() {
+    private static void debugPrintShopsItems() {
         System.out.println("PRINTING SHOPS AND THEIR ITEMS.");
-        for (Shop shop : SHOPS) {
+        for (Shop shop : shops) {
             System.out.println("###############################");
             System.out.println(shop.name);
             System.out.println("###############################");
@@ -418,25 +461,24 @@ public class Scrapper {
      * ArrayList of Shops with ArrayList of Products
      */
     public static ArrayList<Shop> scrapeShops() {
-        if (config == null) {
+        if (shopsConfigs == null || shopsConfigs.isEmpty()) {
             logger.error("Shops Configs are empty");
             return null;
         }
 
-        Map<String, ShopConfiguration> configs = config.getShopConfigs();
-
-        for (Map.Entry<String, ShopConfiguration> entry : configs.entrySet()) {
-            String shopName = entry.getKey();
-            if (shopName.equals("Prisma")) continue;
-            ShopConfiguration shopConfiguration = entry.getValue();
-            scrapeShop(shopName, shopConfiguration);
+        for (ShopConfiguration shopConfig : shopsConfigs) {
+            scrapeShop(shopConfig);
         }
 
-        //debugPrintShopsItems();
+//        debugPrintShopsItems();
         return getShops();
     }
 
     public static void main(String[] args) {
-        scrapeShops();
+        if (args.length > 0 && args[0].equals("-debug")) {
+            loadGui();
+        } else {
+            scrapeShops();
+        }
     }
 }

@@ -1,6 +1,6 @@
-{
-  "shopConfigs": {
-    "Prisma": {
+[
+  {
+      "shopName": "Prisma",
       "scrapeUrl": "https://www.prismamarket.ee/products/collection/eripakkumised",
       "itemSelector": "ul > li.item",
       "properties": {
@@ -11,9 +11,10 @@
         "price": ["span.whole-number", "span.decimal", "text"]
       },
       "cookieSelectors": null,
-      "customLogic": 1
-    },
-    "Maxima": {
+      "customLogicProperties": ["origPrice"]
+  },
+  {
+      "shopName": "Maxima",
       "scrapeUrl": "https://www.maxima.ee/pakkumised",
       "itemSelector": "div.col-third",
       "properties": {
@@ -24,9 +25,10 @@
         "price": ["data-price"]
       },
       "cookieSelectors": null,
-      "customLogic": 0
-    },
-    "Lidl": {
+      "customLogicProperties": null
+  },
+  {
+      "shopName": "Lidl",
       "scrapeUrl": "https://www.lidl.ee/et/naedalapakkumised",
       "itemSelector": "article.ret-o-card",
       "properties": {
@@ -37,7 +39,6 @@
         "price": ["span.lidl-m-pricebox__price", "text"]
       },
       "cookieSelectors": ["button.cookie-alert-decline-button", "button.overlay__closer"],
-      "customLogic": 1
-    }
+      "customLogicProperties": ["image"]
   }
-}
+]
